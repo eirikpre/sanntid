@@ -7,7 +7,7 @@ import (
 	. "fmt" // Using '.' to avoid prefixing functions with their package names
 		// This is probably not a good idea for large projects...
 	"runtime"
-	"time"
+	//"time"
 )
 
 func goroutine_1(channel chan int, channelDone chan int) {		
@@ -44,7 +44,7 @@ func main() {
 
 	// We have no way to wait for the completion of a goroutine (without additional syncronization of some sort)
 	// We'll come back to using channels in Exercise 2. For now: Sleep.
-	time.Sleep(900*time.Millisecond)
+	//time.Sleep(900*time.Millisecond)
 
 	_ = <- channelDone 
 	_ = <- channelDone

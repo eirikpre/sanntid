@@ -18,5 +18,6 @@ func main(){
 
 	_, remoteaddr,_ := msg.ReadFromUDP(p)
 	fmt.Printf("Message read from %v %s\n", remoteaddr, p)
+
 	
 }

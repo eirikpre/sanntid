@@ -15,7 +15,7 @@ func main(){
 	//p := make([]byte, 1024)
 	conn, _ := net.Dial("udp", "129.241.187.255:20008")
 	for j := 0; j > -200; j++{
-	fmt.Fprintf(conn, "Workspace 18: GET RECT")
+	fmt.Fprintf(conn, "GET RECT")
 	}
 	conn.Close()
 	

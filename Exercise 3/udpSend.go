@@ -13,10 +13,8 @@ import ("net"
 
 func main(){
 	//p := make([]byte, 1024)
-	conn, _ := net.Dial("udp", "129.241.187.255:20008")
-	for j := 0; j > -200; j++{
+	conn, _ := net.Dial("udp", "129.241.187.255:20018")
 	fmt.Fprintf(conn, "GET RECT")
-	}
 	conn.Close()
 	
 	//addr := net.UDPAddr{
