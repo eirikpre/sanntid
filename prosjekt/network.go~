@@ -8,10 +8,6 @@ import (
 	"container/list"
 )
 
-
-var heiser list.List	//liste over status
-
-
  
 func Init() {
 	mySelf := new(Status)

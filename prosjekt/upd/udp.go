@@ -4,17 +4,12 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"../variables"
 )
 
 var laddr *net.UDPAddr //Local address
 var baddr *net.UDPAddr //Broadcast address
 
-type Status struct{
-	laddr string		//Local IP
-	floor int 		//Current floor
-	direction int		//Up = 2, Still = 1, Down = 0
-	destination int		//Destination floor
-}
 
 type Udp_message struct {
 	Raddr  string //if receiving raddr=senders address, if sending raddr should be set to "broadcast" or an ip:port
