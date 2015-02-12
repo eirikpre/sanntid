@@ -11,13 +11,7 @@ import (
 
 var heiser list.List	//liste over status
 
-type Status struct{
-	laddr string		//Local IP
-	floor int 		//Current floor
-	direction int	//Up = 2, Still = 1, Down = 0
-	destination int		//Destination floor
-	//workList List
-}
+
  
 func Init() {
 	mySelf := new(Status)
