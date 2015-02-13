@@ -7,21 +7,18 @@ import (
 	"time"
 	"./udp"
 	"./variables"
+	"./driver"
 )
 
 
  
-func Init() {
-	mySelf := new(Status)
-	mySelf.laddr = "129.241.187.255"
-	mySelf.floor = 1
-	mySelf.direction = 2
-	mySelf.destination = 2
-	
-	heiser.PushBack(mySelf)
-	//Get floor, direction,destination
-	//Set up WorkList
-	// Store in heiser.Front()
+func Init(elev_ch chan []Status) {
+
+	//driver.Init()
+	//mySelf = driver.getStatus()
+	append(elevs, mySelf)
+	elev_ch <- elevs
+	errUDP := udp.Udp_init(variables.bport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
 }
 
 
@@ -31,14 +28,18 @@ func StatusUpdate(status Status){
 	
 }
 
+
+
 func main(){
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	Init()
-	
-	//go UDPStatusUpdate()		//Updates local status & puts it in heiser
-	go UDPSendStatus()		//Sending current status to all the other heiser
-	go UDPReceiveStatus(baddr)	//Receiving statuses and stores them in heiser
-	//go UDPReceiveWork()		//Receiving work and puts them in workList
+	var receive_ch chan Udp_message
+	var elevs []Status
+	var elev_ch chan []Status = make(chan []Status,1)
+	var send_ch chan Udp_message
+	var err_ch
+	Init(elev_ch)
+	errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
+		
 	
 	time.Sleep(2*time.Second)
 	

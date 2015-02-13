@@ -13,7 +13,7 @@ var baddr *net.UDPAddr //Broadcast address
 
 type Udp_message struct {
 	Raddr  string //if receiving raddr=senders address, if sending raddr should be set to "broadcast" or an ip:port
-	Data   Status //TODO: implement another encoding, strings are meh
+	Data   variables.Status //TODO: implement another encoding, strings are meh
 	Length int    //length of received data, in #bytes // N/A for sending
 }
 
@@ -49,6 +49,7 @@ func Udp_init(localListenPort, broadcastListenPort, message_size int, send_ch, r
 
 	//	fmt.Printf("Generating local address: \t Network(): %s \t String(): %s \n", laddr.Network(), laddr.String())
 	//	fmt.Printf("Generating broadcast address: \t Network(): %s \t String(): %s \n", baddr.Network(), baddr.String())
+	
 	return err
 }
 
@@ -133,5 +134,21 @@ func udp_connection_reader(conn *net.UDPConn, message_size int, rcv_ch chan Udp_
 		}
 		rcv_ch <- Udp_message{Raddr: raddr.String(), Data: string(buf), Length: n}
 	}
+}
+
+func getOwnIP() net.IPAddr {
+	ifaces, err := net.Interfaces()
+	// handle err
+	for _, i := range ifaces {
+	    addrs, err := i.Addrs()
+	    // handle err
+	    for _, addr := range addrs {
+		switch v := addr.(type) {
+		case *net.IPAddr:
+		    // process IP address
+		}
+
+	    }
+}
 }
 

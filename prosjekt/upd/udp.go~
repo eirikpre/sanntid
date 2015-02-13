@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"../var"
+	"../variables"
 )
 
 var laddr *net.UDPAddr //Local address
@@ -13,7 +13,7 @@ var baddr *net.UDPAddr //Broadcast address
 
 type Udp_message struct {
 	Raddr  string //if receiving raddr=senders address, if sending raddr should be set to "broadcast" or an ip:port
-	Data   Status //TODO: implement another encoding, strings are meh
+	Data   variables.Status //TODO: implement another encoding, strings are meh
 	Length int    //length of received data, in #bytes // N/A for sending
 }
 
@@ -49,6 +49,7 @@ func Udp_init(localListenPort, broadcastListenPort, message_size int, send_ch, r
 
 	//	fmt.Printf("Generating local address: \t Network(): %s \t String(): %s \n", laddr.Network(), laddr.String())
 	//	fmt.Printf("Generating broadcast address: \t Network(): %s \t String(): %s \n", baddr.Network(), baddr.String())
+	
 	return err
 }
 
@@ -133,5 +134,19 @@ func udp_connection_reader(conn *net.UDPConn, message_size int, rcv_ch chan Udp_
 		}
 		rcv_ch <- Udp_message{Raddr: raddr.String(), Data: string(buf), Length: n}
 	}
+}
+
+func getOwnIP() string{
+	googleAddress, _ := net.ResolveTCPAddr("tcp", "www.google.com:80")
+	googleConn, err := net.DialTCP("tcp", nil, googleAddress)
+	for {
+		if err == nil {
+			break
+		}
+		googleConn, err = net.DialTCP("tcp", nil, googleAddress)
+	}
+	Ip := strings.Split(googleConn.LocalAddr().String(), ":")[0]
+	googleConn.Close()
+	return Ip
 }
 
