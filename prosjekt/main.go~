@@ -36,10 +36,12 @@ func main(){
 	var elevs []Status
 	var elev_ch chan []Status = make(chan []Status,1)
 	var send_ch chan Udp_message
-	Init(elev_ch)
-	errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
-		
-	
+	var err_ch
+	var chan int motorDir
+	//Init(elev_ch)
+	//errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
+	go motorHandler(motorDir)	
+	motorDir <- 1
 	time.Sleep(2*time.Second)
 	
 
