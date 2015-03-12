@@ -2,10 +2,10 @@ package main
 
 import (
 	"runtime"
-	//"time"
+	"time"
 	//"variables"
 	//"udp"
-	"driver"
+	"./src/driver"
 )
 
 /*
@@ -42,6 +42,6 @@ func main(){
 	//errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
 	//driver.Init()
 	for{
-	
+		time.Sleep(time.Second*10)
 	}
 }

@@ -1,17 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"net"
 	"runtime"
 	"time"
-	"./udp"
-	"./variables"
-	"./driver"
+	//"variables"
+	//"udp"
+	".src/driver"
 )
 
-
- 
+/*
 func Init(elev_ch chan []Status) {
 
 	//driver.Init()
@@ -27,22 +24,24 @@ func StatusUpdate(status Status){
 	
 	
 }
-
+*/
 
 
 func main(){
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	var receive_ch chan Udp_message
-	var elevs []Status
-	var elev_ch chan []Status = make(chan []Status,1)
-	var send_ch chan Udp_message
-	var err_ch
-	var chan int motorDir
-	//Init(elev_ch)
-	//errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
-	go motorHandler(motorDir)	
-	motorDir <- 1
-	time.Sleep(2*time.Second)
+/*
+	var receive_ch chan udp.Udp_message
+	     var elevs []variables.Status
+	var elev_ch chan []variables.Status = make(chan []variables.Status,1)
+	var send_ch chan udp.Udp_message
+*/
 	
 
+	driver.Init()
+	
+	//errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
+	//driver.Init()
+	for{
+		time.Sleep(time.Second*10)
+	}
 }
