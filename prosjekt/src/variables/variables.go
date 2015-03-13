@@ -1,13 +1,19 @@
 package variables
 
+type Order struct{
+	Floor int
+	Dir int
+}
 
 type Status struct{
 	Laddr string		//Local IP
-	Floor int 		//Current floor
-	Direction int		//Up = 2, Still = 1, Down = 0
-	NextFloor []int		//Destination floor
+	Floor int 			//Current floor
+	Direction int		//Up = 1, Still = 0, Down = -1
+	Stop bool
+	Orders []Order		//Destination floor
 	
 }
+
 
 const N_FLOORS  	= 	3 
 const N_BUTTONS		= 	4      

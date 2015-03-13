@@ -1,7 +1,7 @@
 package driver
 
 import (
-	"variables"
+	"../variables"
 	"time"
 	"fmt"
 )
@@ -30,44 +30,49 @@ var lamp_channel_matrix  = []int{
     variables.LIGHT_DOOR_OPEN, variables.LIGHT_DOWN4, variables.LIGHT_COMMAND4,
 }
 
-func Init(){
+func Init(nextFloor chan int, jobDone chan bool, newOrders chan variables.Order, StopCh chan bool, ObsCh chan bool,	currentFloor chan int){
 	io_init()
-	sensor := make(chan int,1)
-	buttons := make(chan int,1)
-	currentFloor := make(chan int,50)
+
+	sensor := make(chan int,0)
+
 	//nextFloor := make(chan int,1)
+
 	
 	for i:=0; i<12; i++{
 		lightButtons(i, false)
 	} 
 	
-	buttons <- 0
 	
 	go readSensor(sensor)
-	go readButtons(buttons)
-	go MoveToFloor(nextFloor,currentFloor,sensor)		//waiting for the polling
-	
+	go readButtons(newOrders,ObsCh,StopCh)
+	go moveToFloor(nextFloor,currentFloor,sensor,jobDone)		//waiting for the polling
 	
 }
 
-func MoveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int){
-	tempFloor := 2;
-	target := 5;
+
+
+func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, arrivedCh chan bool ){
+	tempFloor := 0;
+	target := 0;
 	for{
 		select{
 		case tempFloor = <-sensor:
 			currentFloor <- tempFloor
+			fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
 			if tempFloor == target{
+				time.Sleep(time.Millisecond*150)
 				motorHandler(0)
-				
-									
+				arrivedCh <- true
+				// Åpner dører og venter 10 sek. DÅRLIG IMPLEMENTASJON
+
 			}
+
 		case target = <- nextFloor:
-			fmt.Println("the target is:",target)
+			fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
 			if target >= 0 && target < 4{
-				fmt.Println("legal input")
+				
 				if target < tempFloor{
-				 	motorHandler(-1) 
+				 	motorHandler(-1)	 
 				}else if target > tempFloor { 
 					motorHandler(1) 
 				}else{ 	
@@ -95,18 +100,53 @@ func lightButtons(light int, on bool){
 	}
 }
 
-func readButtons( buttons chan int){
+func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan bool){ 
 	lastRead := -1
-	
+	var order variables.Order
 	for{
 		
 		for i := 0; i<12; i++{
 			if io_read_bit(button_channel_matrix[i]) == 1{
-				if lastRead != i{
-					
+				
+				if i == 9 {
+					ObsCh <- true				
+				}else if i == 1{
+					lightButtons(i,true)
+					StopCh <- true				
+				}else if lastRead != i{
+					switch i {
+						case 0 , 2:
+							order.Floor = 0
+							order.Dir = 1 - i/2
+						case 3 , 4 , 5 :
+							order.Floor = 1
+							if i == 3{
+								order.Dir = 1
+							}else if i == 4	{
+								order.Dir = -1
+							}else {
+								order.Dir = 0
+							}
+						case 6 , 7 , 8 :
+							order.Floor = 2 
+							if i == 6{
+								order.Dir = 1
+							}else if i == 7	{
+								order.Dir = -1
+							}else {
+								order.Dir = 0
+							}
+						case 10 , 11:
+							order.Floor = 3
+							order.Dir = 11 - i
+						
+
+
+					}	
 					lightButtons(i,true)
 					lastRead = i
-					buttons <- i
+					fmt.Println("readButtons: Sending order" , order)
+					newOrders <- order
 				}
 			}
 		}
@@ -152,7 +192,7 @@ func readSensor(sensor chan int){
 		}
 		
 		if lastRead != current {
-			fmt.Println("the sensor is: <---",current)
+
 			lastRead = current
 			sensor <- current
 			
