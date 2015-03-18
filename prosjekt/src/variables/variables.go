@@ -6,7 +6,7 @@ type Order struct{
 }
 
 type Status struct{
-	Laddr string		//Local IP
+	Addr string		//Local IP
 	Floor int 			//Current floor
 	Direction int		//Up = 1, Still = 0, Down = -1
 	Stop bool

@@ -5,16 +5,7 @@ import (
 	"time"
 	"fmt"
 )
-/*
-TODO
 
-Door Open
-
-
-
-
-
-*/
 
 var button_channel_matrix = []int{ 
 	variables.BUTTON_UP1, variables.STOP, variables.BUTTON_COMMAND1,
@@ -51,38 +42,41 @@ func Init(nextFloor chan int, jobDone chan bool, newOrders chan variables.Order,
 
 
 
-func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, arrivedCh chan bool ){
+func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, jobDone chan bool ){
 	tempFloor := 0;
 	target := 0;
+	fmt.Println("moveToFloor: Initialize")
 	for{
 		select{
 		case tempFloor = <-sensor:
 			currentFloor <- tempFloor
-			fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
+			//fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
 			if tempFloor == target{
 				time.Sleep(time.Millisecond*150)
 				motorHandler(0)
-				arrivedCh <- true
-				// Åpner dører og venter 10 sek. DÅRLIG IMPLEMENTASJON
+				// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
+				lightButtons(9,true)
+
+				time.Sleep(time.Second*4)
+				lightButtons(9,false)
+				jobDone <- true
+				
 
 			}
 
 		case target = <- nextFloor:
-			fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
-			if target >= 0 && target < 4{
-				
+			//fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
+							
 				if target < tempFloor{
 				 	motorHandler(-1)	 
 				}else if target > tempFloor { 
 					motorHandler(1) 
-				}else{ 	
-				motorHandler(0) /*Error!!*/	
+				}else if target == tempFloor{ 	
+					motorHandler(0)
+					time.Sleep(time.Second*4) 
+					jobDone <- true	
 				}
-			}else {
-				fmt.Println("MoveToFloor :: illegal input")
-				motorHandler(0)
-				/*Error!!*/
-			}
+			
 			
 		}
 		
@@ -109,7 +103,7 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 			if io_read_bit(button_channel_matrix[i]) == 1{
 				
 				if i == 9 {
-					ObsCh <- true				
+					ObsCh <- true			
 				}else if i == 1{
 					lightButtons(i,true)
 					StopCh <- true				
@@ -145,7 +139,7 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 					}	
 					lightButtons(i,true)
 					lastRead = i
-					fmt.Println("readButtons: Sending order" , order)
+					//fmt.Println("readButtons: Sending order" , order)
 					newOrders <- order
 				}
 			}
