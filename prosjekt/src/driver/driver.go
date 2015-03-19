@@ -23,17 +23,11 @@ var lamp_channel_matrix  = []int{
 
 func Init(nextFloor chan int, jobDone chan bool, newOrders chan variables.Order, StopCh chan bool, ObsCh chan bool,	currentFloor chan int){
 	io_init()
-
 	sensor := make(chan int,0)
-
 	//nextFloor := make(chan int,1)
-
-	
 	for i:=0; i<12; i++{
 		lightButtons(i, false)
 	} 
-	
-	
 	go readSensor(sensor)
 	go readButtons(newOrders,ObsCh,StopCh)
 	go moveToFloor(nextFloor,currentFloor,sensor,jobDone)		//waiting for the polling
@@ -57,12 +51,13 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 				// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
 				lightButtons(9,true)
 
-				time.Sleep(time.Second*4)
+				time.Sleep(time.Second*2)
 				lightButtons(9,false)
 				jobDone <- true
 				
 
 			}
+			
 
 		case target = <- nextFloor:
 			//fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
@@ -73,11 +68,14 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 					motorHandler(1) 
 				}else if target == tempFloor{ 	
 					motorHandler(0)
-					time.Sleep(time.Second*4) 
-					jobDone <- true	
+					// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
+					lightButtons(9,true)
+
+					time.Sleep(time.Second*2)
+					lightButtons(9,false)
+					jobDone <- true
 				}
-			
-			
+
 		}
 		
 	}
@@ -107,7 +105,7 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 				}else if i == 1{
 					lightButtons(i,true)
 					StopCh <- true				
-				}else if lastRead != i{
+				}else{
 					switch i {
 						case 0 , 2:
 							order.Floor = 0
@@ -133,15 +131,21 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 						case 10 , 11:
 							order.Floor = 3
 							order.Dir = 11 - i
-						
+					}
+					if i != lastRead{
+						newOrders <- order
+					}else if io_read_bit(0x200+4+order.Floor) == 1 && i == lastRead {
+								newOrders <- order
+					}
 
-
-					}	
 					lightButtons(i,true)
 					lastRead = i
 					//fmt.Println("readButtons: Sending order" , order)
-					newOrders <- order
+					
 				}
+					
+
+				
 			}
 		}
 		time.Sleep(time.Millisecond*80)
