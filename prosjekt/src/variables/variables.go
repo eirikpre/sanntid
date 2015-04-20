@@ -74,8 +74,6 @@ const LIGHT_UP4         =  -1
 	
 
 
-//var bport string := "20400"
-
  
 
 

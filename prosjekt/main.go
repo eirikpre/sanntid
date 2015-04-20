@@ -21,39 +21,48 @@ UDP modul
 
 
 */
+func bubbleSort(orders []variables.Order,direction int) []variables.Order { 	// Sorts the Orders
+	var temp variables.Order
+	
+	for i:=1;i<len(orders);i++{
+		for j:=1;j<len(orders);i++{
+			if orders[j-1]*direction/abs(direction) > orders[j]{
+				temp = orders[j-1]
+				orders[j-1] = orders[j]
+				orders[j] = temp
+			}
+		}
+	}
+	return orders
+}
+
+
 func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 	if len(status.Orders) <= 1{
 		return status
 	}
+	
 	var zeros []variables.Order
 	var currentDir []variables.Order
 	var wrongDir []variables.Order
 	
 	for i:=0;i<len(status.Orders);i++{					
-		if status.Orders[i].Dir*status.Direction > 0{		// Adding a sorting the currentDir orders
-			for j:=0;j<len(currentDir);j++{
-				if currentDir[j].Floor*status.Direction < currentDir[j+1].Floor {
-					currentDir = append(currentDir[:j], status.Orders[i], currentDir[(j+1):])
-					break
-				}
-			}
-		}if else status.Orders[i].Dir*status.Direction < 0{	// Adding a sorting the wrongDir orders
-			for j:=0;j<len(wrongDir);j++{
-				if wrongDir[j].Floor*status.Direction > wrongDir[j+1].Floor {
-					wrongDir = append(wrongDir[:j], status.Orders[i], wrongDir[(j+1):])
-					break
-				}
-			}
-		}else{
-			for j:=0;j<len(zeros);j++{						// Adding a sorting the zeros orders
-				if zeros[j].Floor*status.Direction < zeros[j+1].Floor {
-					zeros = append(zeros[:j], status.Orders[i], zeros[(j+1):])
-					break
-				}
-			}
+		if status.Orders[i].Dir*status.Direction > 0{		// Adding the currentDir orders
+			currentDir = append(currentDir[:j], status.Orders[i], currentDir[(j+1):])
+		}if else status.Orders[i].Dir*status.Direction < 0{	// Adding the wrongDir orders
+				wrongDir = append(wrongDir[:j], status.Orders[i], wrongDir[(j+1):]
+		}else{												// Adding  the zeros orders
+				zeros = append(zeros[:j], status.Orders[i], zeros[(j+1):])
 		}		
 	}
+	
+	currentDir = bubbleSort(currentDir, status.Direction)
+	wrongDir = bubbleSort(wrongDir, status.Direction*-1)
+	zeros = bubbleSort(zeros, status.Direction)
+	
 	status.Orders = append(currentDir, wrongDir)
+	
+	
 	for i:=0; i<len(zeros);i++{								// Adding the zeros in correct place
 		for j:=0;j<len(status.Orders);j++{
 			if status.Orders[j] >= zeros[i]*status.Direction{
@@ -63,9 +72,11 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 		}		
 	}
 	for i:=0; i<len(status.Orders); i++{
-		if status.Orders[0].Floor > status.Floor*status.Direction{
+		if status.Orders[i].Floor*status.Direction < status.Floor*status.Direction{
 			status.Orders = append(status.Orders[1:],status.Orders[0])
-		}	
+		}else{
+			break
+		}
 	}
 	return status
 }
@@ -73,12 +84,12 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 
 func costFunc(statuses []variables.Status, newOrder variables.Order) variables.Status, int{
 	var costArray []int = make(int[],len(statuses));
-	if newOrder.Dir == 0{ 					// Buttons inside the elevator => job has to be done by self
+	if newOrder.Dir == 0{ 								// Buttons inside the elevator => job has to be done by self
 		statuses[0].Orders = append(statuses[0].Orders[:],newOrder)
 		statuses[0] = sort(statuses[0]) 
 		return statuses[0],0
 	}
-	for i:=0; i<len(statuses); i++ {     	// Checking for similar orders
+	for i:=0; i<len(statuses); i++ {     				// Checking for similar orders
 		for j:=0; j<statuses[i].Orders;j++{
 			if statuses[i].Orders[j] == newOrder{
 				return statuses[i],-1
@@ -87,9 +98,9 @@ func costFunc(statuses []variables.Status, newOrder variables.Order) variables.S
 	}
 
 	
-	for i:=0;i<len(statuses);i++{			// Creating a costArray
+	for i:=0;i<len(statuses);i++{						// Creating a costArray
 		if statuses[i].Floor == newOrder.Floor && (statuses[i].Direction*newOrder.Dir >= 0)
-		{ 									// Elevator at the current floor && same direction
+		{ 												// Elevator at the current floor && same direction
 			statuses[i].Orders = append(statuses[i].Orders[:],newOrder)
 			statuses[i] = sort(statuses[i]) 
 			return statuses[i],i
@@ -213,9 +224,7 @@ func localStatusHandler(receiveStatus ,sendStatus chan variables.Status,jobDone 
 
 
 func main(){
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-
+	runtime.GOMAXPROCS(runtime.NumCPU()) 
 	jobDone := make(chan bool)
 	newOrders := make(chan variables.Order)
 	nextFloor := make(chan int,10)
