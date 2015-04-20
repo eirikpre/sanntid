@@ -15,25 +15,100 @@ TODO
 Door Open
 lastRead / receiveOrder / multiple equal orders 94- 98
 
+Testing
+UDP modul
 
 
 
 */
-func distributeOrder(statuses []variables.Status, newOrder variables.Order) variables.Status{
-	for j:=0; j<40;j++{
-		for i:=0; i<len(statuses); i++{
-			if len(statuses[i].Orders[j:]) == 0{
-				statuses[i].Orders = append(statuses[i].Orders, newOrder)
-				statuses[i].Direction = statuses[i].Orders[0].Floor - statuses[i].Floor
-				 
-				return statuses[i]
+func sort(status variables.Status) variables.Status { 	// Sorts the Orders
+	var zeros []variables.Order
+	var currentDir []variables.Order
+	var wrongDir []variables.Order
+	
+	for i:=0;i<len(status.Orders);i++{					
+		if status.Orders[i].Dir*status.Direction > 0{		// Adding a sorting the currentDir orders
+			for j:=0;j<len(currentDir);j++{
+				if currentDir[j].Floor*status.Direction < currentDir[j+1].Floor {
+					currentDir = append(currentDir[:j], status.Orders[i], currentDir[(j+1):])
+					break
+				}
+			}
+		}if else status.Orders[i].Dir*status.Direction < 0{	// Adding a sorting the wrongDir orders
+			for j:=0;j<len(wrongDir);j++{
+				if wrongDir[j].Floor*status.Direction > wrongDir[j+1].Floor {
+					wrongDir = append(wrongDir[:j], status.Orders[i], wrongDir[(j+1):])
+					break
+				}
+			}
+		}else{
+			for j:=0;j<len(zeros);j++{						// Adding a sorting the zeros orders
+				if zeros[j].Floor*status.Direction < zeros[j+1].Floor {
+					zeros = append(zeros[:j], status.Orders[i], zeros[(j+1):])
+					break
+				}
+			}
+		}		
+	}
+	status.Orders = append(currentDir, wrongDir)
+	for i:=0; i<len(zeros);i++{								// Adding the zeros in correct place
+		for j:=0;j<len(status.Orders);j++{
+			if status.Orders[j] >= zeros[i]*status.Direction{
+				status.Orders = append(status.Orders[:j], zeros[i], status.Orders[(j+1):])
+				break
+			}
+		}		
+	}
+	for i:=0; i<len(status.Orders); i++{
+		if status.Orders[0].Floor > status.Floor*status.Direction{
+			status.Orders = append(status.Orders[1:],status.Orders[0])
+		}	
+	}
+	return status
+}
+func costFunc(statuses []variables.Status, newOrder variables.Order) variables.Status, int{
+	var costArray []int = make(int[],len(statuses));
+	if newOrder.Dir == 0{ 					// Buttons inside the elevator => job has to be done by self
+		statuses[0].Orders = append(statuses[0].Orders[:],newOrder)
+		statuses[i] = sort(statuses[i]) // Sorting
+		return statuses[0],0
+	}
+	for i:=0; i<len(statuses); i++ {     	// Checking for similar orders
+		for j:=0; j<statuses[i].Orders;j++{
+			if statuses[i].Orders[j] == newOrder{
+				return statuses[i],-1
 			}
 		}
 	}
-	statuses[0].Orders = append(statuses[0].Orders, newOrder)
-	statuses[0].Direction = statuses[0].Orders[0].Floor - statuses[0].Floor
-	return statuses[0]
 
+	
+	for i:=0;i<len(statuses);i++{
+		if statuses[i].Floor == newOrder.Floor && (statuses[i].Direction == 0 || statuses[i].Direction/abs(statuses[i].Direction) == newOrder.Dir)
+		{ 									// Elevator at the current floor && same direction
+			statuses[i].Orders = append(statuses[i].Orders[:],newOrder)
+			statuses[i] = sort(statuses[i]) // Sorting
+			return statuses[i],i
+		}else{
+			for j:=0;j<len(statuses[i].Orders);j++{		// Add costs in the array
+				costArray[i] += abs(statuses[i].Floor - statuses[i].Orders[j].Floor)
+				costArray[i] += abs(statuses[i].Floor - newOrder.Floor)
+			}		
+			if statuses[i].Direction/abs(statuses[i].Direction) != newOrder.Dir && statuses[i].Direction != 0{
+				costArray[i] += 10
+			}			
+		}
+	}
+	minimum:=256;
+	position:=0;
+	for i:=0;i<len(statuses);i++{ 			// Find the cheapest elevator
+		if minimum > costArray[i]{
+			minimum = costArray[i]
+			position = i
+		}
+	}
+	statuses[position].Orders = append(statuses[position].Orders[:],newOrder)
+	statuses[i] = sort(statuses[i]) // Sorting
+	return statuses[position],position
 }
 
 
@@ -70,11 +145,15 @@ func statusHandler(LOCALreceiveStatus chan variables.Status, LOCALsendStatus cha
 			
 			//cost function!
 			
-			newStatus := distributeOrder(statuses,newOrder)
-			//UDPsendStatus <- newStatus
-			fmt.Println("statusHandler: sending newStatus with newOrder", newStatus)
-			
-			LOCALreceiveStatus <- newStatus
+			newStatus,position := costFunc(statuses,newOrder)
+			if position >= 0 {
+				if position == 0 {
+					LOCALreceiveStatus <- newStatus
+				}
+				//UDPsendStatus <- newStatus
+				
+			}	
+				
 
 		}
 	}
@@ -100,16 +179,13 @@ func localStatusHandler(receiveStatus chan variables.Status,sendStatus chan vari
 			
 			
 		case <- jobDone :
-			fmt.Println("localStatusHandler: received jobDone")
-
-			
-			//fmt.Println("localStatusHandler: length = ",len(localStatus.Orders))
+			//fmt.Println("localStatusHandler: received jobDone")
 			if len(localStatus.Orders) > 1 {
 				//fmt.Println("localStatusHandler: More Orders to be done, starting next: " ,localStatus.Orders)
 				localStatus.Orders = append(localStatus.Orders[1:])
 				localStatus.Direction = localStatus.Orders[0].Floor - localStatus.Floor 
 				nextFloor <- localStatus.Orders[0].Floor
-				fmt.Println("localStatusHandler: jobDone sending nextFloor = ",localStatus.Orders[0].Floor)
+				//fmt.Println("localStatusHandler: jobDone sending nextFloor = ",localStatus.Orders[0].Floor)
 			}else if len(localStatus.Orders) == 1{
 				//fmt.Println("localStatusHandler: Last order done")
 				localStatus.Orders = append(localStatus.Orders[1:])
