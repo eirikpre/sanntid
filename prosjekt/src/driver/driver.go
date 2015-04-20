@@ -24,22 +24,19 @@ var lamp_channel_matrix  = []int{
 func Init(nextFloor chan int, jobDone chan bool, newOrders chan variables.Order, StopCh chan bool, ObsCh chan bool,	currentFloor chan int){
 	io_init()
 	sensor := make(chan int,0)
-	//nextFloor := make(chan int,1)
-	for i:=0; i<12; i++{
+	for i:=0; i<12; i++{		//Turn every light off.
 		lightButtons(i, false)
 	} 
 	go readSensor(sensor)
 	go readButtons(newOrders,ObsCh,StopCh)
-	go moveToFloor(nextFloor,currentFloor,sensor,jobDone)		//waiting for the polling
+	go moveToFloor(nextFloor,currentFloor,sensor,jobDone)	
 	
 }
-
-
 
 func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, jobDone chan bool ){
 	tempFloor := 0;
 	target := 0;
-	fmt.Println("moveToFloor: Initialize")
+	fmt.Println("moveToFloor: Initializing")
 	for{
 		select{
 		case tempFloor = <-sensor:
@@ -81,9 +78,6 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 	}
 }
 
-
-
-
 func lightButtons(light int, on bool){
 	if on {	
 		io_set_bit(lamp_channel_matrix[light])
@@ -95,6 +89,7 @@ func lightButtons(light int, on bool){
 func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan bool){ 
 	lastRead := -1
 	var order variables.Order
+	fmt.Println("readButtons: Initializing")
 	for{
 		
 		for i := 0; i<12; i++{
@@ -152,10 +147,10 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 	}
 }
 
-
 func readSensor(sensor chan int){
 	lastRead := -1
 	current := -1
+	fmt.Println("readSensor: Initializing")
 	for {		
 		if io_read_bit(variables.SENSOR_FLOOR1) == 1 	   {
 			current = 0
@@ -198,7 +193,6 @@ func readSensor(sensor chan int){
 		time.Sleep(time.Millisecond*50)
 	}
 }
-
 
 func motorHandler(motorDir int ) {
 	if (motorDir == 0){

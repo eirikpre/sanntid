@@ -5,7 +5,7 @@ import (
 	"time"
 	"fmt"
 	"./src/variables"
-	//"./src/udp"
+	"./src/udp"
 	"./src/driver"
 )
 
@@ -22,6 +22,9 @@ UDP modul
 
 */
 func sort(status variables.Status) variables.Status { 	// Sorts the Orders
+	if len(status.Orders) <= 1{
+		return status
+	}
 	var zeros []variables.Order
 	var currentDir []variables.Order
 	var wrongDir []variables.Order
@@ -66,11 +69,13 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 	}
 	return status
 }
+
+
 func costFunc(statuses []variables.Status, newOrder variables.Order) variables.Status, int{
 	var costArray []int = make(int[],len(statuses));
 	if newOrder.Dir == 0{ 					// Buttons inside the elevator => job has to be done by self
 		statuses[0].Orders = append(statuses[0].Orders[:],newOrder)
-		statuses[i] = sort(statuses[i]) // Sorting
+		statuses[0] = sort(statuses[0]) 
 		return statuses[0],0
 	}
 	for i:=0; i<len(statuses); i++ {     	// Checking for similar orders
@@ -82,11 +87,11 @@ func costFunc(statuses []variables.Status, newOrder variables.Order) variables.S
 	}
 
 	
-	for i:=0;i<len(statuses);i++{
-		if statuses[i].Floor == newOrder.Floor && (statuses[i].Direction == 0 || statuses[i].Direction/abs(statuses[i].Direction) == newOrder.Dir)
+	for i:=0;i<len(statuses);i++{			// Creating a costArray
+		if statuses[i].Floor == newOrder.Floor && (statuses[i].Direction*newOrder.Dir >= 0)
 		{ 									// Elevator at the current floor && same direction
 			statuses[i].Orders = append(statuses[i].Orders[:],newOrder)
-			statuses[i] = sort(statuses[i]) // Sorting
+			statuses[i] = sort(statuses[i]) 
 			return statuses[i],i
 		}else{
 			for j:=0;j<len(statuses[i].Orders);j++{		// Add costs in the array
@@ -107,16 +112,15 @@ func costFunc(statuses []variables.Status, newOrder variables.Order) variables.S
 		}
 	}
 	statuses[position].Orders = append(statuses[position].Orders[:],newOrder)
-	statuses[i] = sort(statuses[i]) // Sorting
+	statuses[i] = sort(statuses[i])
 	return statuses[position],position
 }
 
 
-func statusHandler(LOCALreceiveStatus chan variables.Status, LOCALsendStatus chan variables.Status, UDPreceiveStatus chan variables.Status,	UDPsendStatus chan variables.Status, newOrders chan variables.Order ){
-	
+func statusHandler(LOCALreceiveStatus, LOCALsendStatus, UDPreceiveStatus, UDPsendStatus chan variables.Status, newOrders chan variables.Order ){
 	var statuses []variables.Status
-	statuses = append(statuses, createStatus())
-	var added bool = false
+	statuses = append(createStatus())
+	var updated bool = false
 	for{
 		select{
 		case newStatus := <- UDPreceiveStatus :
@@ -124,44 +128,38 @@ func statusHandler(LOCALreceiveStatus chan variables.Status, LOCALsendStatus cha
 			for i:=0; i<len(statuses); i++{
 				if statuses[i].Addr == newStatus.Addr{
 					statuses[i] = newStatus
-					added = true
+					updated = true
 					if i == 0{
 						LOCALreceiveStatus <- newStatus
 					}
 					break
 				}
 			}
-			if !(added){
+			if !(updated){
 				statuses = append(statuses, newStatus)
 			}
-			added = false
+			updated = false
 
 		case newStatus := <- LOCALsendStatus:
 			fmt.Println("statusHandler: received from LOCALsendStatus =",newStatus)
 			statuses[0] = newStatus
-			//UDPsendStatus <- newStatus
+			UDPsendStatus <- newStatus
 
 		case newOrder := <- newOrders :
-			
-			//cost function!
 			
 			newStatus,position := costFunc(statuses,newOrder)
 			if position >= 0 {
 				if position == 0 {
 					LOCALreceiveStatus <- newStatus
 				}
-				//UDPsendStatus <- newStatus
+				UDPsendStatus <- newStatus
+			}
 				
-			}	
-				
-
-		}
+		}	
 	}
-
 }
 
-
-func localStatusHandler(receiveStatus chan variables.Status,sendStatus chan variables.Status,jobDone chan bool,currentFloor chan int,StopCh chan bool,ObsCh chan bool,nextFloor chan int){
+func localStatusHandler(receiveStatus ,sendStatus chan variables.Status,jobDone chan bool,currentFloor chan int,StopCh chan bool,ObsCh chan bool,nextFloor chan int){
 	var localStatus variables.Status
 	
 
@@ -214,8 +212,6 @@ func localStatusHandler(receiveStatus chan variables.Status,sendStatus chan vari
 
 
 
-
-
 func main(){
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -230,9 +226,9 @@ func main(){
 	LOCALsendStatus := make(chan variables.Status)
 	UDPreceiveStatus := make(chan variables.Status, 50)
 	UDPsendStatus := make(chan variables.Status, 50)
+	
 	driver.Init(nextFloor,jobDone,newOrders,StopCh,ObsCh,currentFloor)
-
-	//statusInit(LOCALreceiveStatus,LOCALsendStatus)
+	
 	go statusHandler(LOCALreceiveStatus,LOCALsendStatus,UDPreceiveStatus,UDPsendStatus, newOrders,)
 	go localStatusHandler(LOCALreceiveStatus,LOCALsendStatus,jobDone,currentFloor,StopCh,ObsCh,nextFloor)
 	//errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
@@ -243,19 +239,9 @@ func main(){
 }
 
 
-func statusInit(receiveStatus chan variables.Status, sendStatus chan variables.Status){
-	status := variables.Status{Floor:0,Direction:0,Stop:false}
+func createStatus() variables.Status{
+	status := variables.Status{Floor:1,Direction:-1,Stop:false}
+	status.Addr = udp.GetOwnIP()
 	status.Orders = append(status.Orders, variables.Order{Floor:0,Dir:0})
-	receiveStatus <- status
-	sendStatus <- status
-
-}
-
-func createStatus() variables.Status {
-		status := variables.Status{Floor:0,Direction:0,Stop:false}
-		// Sette riktig ip-adresse.
-	status.Orders = append(status.Orders, variables.Order{Floor:0,Dir:0})
-
 	return status
-
 }
