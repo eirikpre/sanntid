@@ -1,5 +1,8 @@
 package variables
 
+
+
+
 type Order struct{
 	Floor int
 	Dir int
@@ -14,7 +17,7 @@ type Status struct{
 	
 }
 
-
+const port = 30000
 const N_FLOORS  	= 	3 
 const N_BUTTONS		= 	4      
 
