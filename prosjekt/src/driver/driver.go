@@ -34,9 +34,10 @@ func Init(nextFloor chan int, jobDone chan bool, newOrders chan variables.Order,
 }
 
 func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, jobDone chan bool ){
-	tempFloor := 0;
+	tempFloor := 1;
 	target := 0;
 	fmt.Println("moveToFloor: Initializing")
+
 	for{
 		select{
 		case tempFloor = <-sensor:
@@ -125,7 +126,7 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 							}
 						case 10 , 11:
 							order.Floor = 3
-							order.Dir = 11 - i
+							order.Dir =  i - 11
 					}
 					if i != lastRead{
 						newOrders <- order
