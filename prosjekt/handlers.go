@@ -11,30 +11,37 @@ import (
 
 func statusHandler(to_local_ch, from_local_ch, UDPreceiveStatus, UDPsendStatus chan variables.Status, newOrders chan variables.Order ){
 	var statuses []variables.Status
-	statuses = append(statuses[:],variables.Status{Stop:false})
+	statuses = append(statuses[:],createStatus())
 	var updated bool = false
 	for{
 		select{
 		case newStatus := <- UDPreceiveStatus :
-			fmt.Println("statusHandler: UDPreceiveStatus =",newStatus)
+
+			//fmt.Println("statusHandler: UDPreceiveStatus =\n",newStatus)
 			for i:=0; i<len(statuses); i++{
+
 				if statuses[i].Addr == newStatus.Addr{
 					statuses[i] = newStatus
 					updated = true
 					if i == 0{
 						to_local_ch <- newStatus
 					}
+					fmt.Println("----------------STATUSES---------------------")
+					for i:=0;i<len(statuses);i++{
+						fmt.Println(statuses[i])
+					}
 					break
 				}
 			}
 			if !(updated){
-				statuses = append(statuses, newStatus)
+				statuses = append(statuses[:], newStatus)
 			}
+
 			updated = false
 
 
 		case newStatus := <- from_local_ch:
-			fmt.Println("statusHandler: from_local_ch =",newStatus)
+			//fmt.Println("statusHandler: from_local_ch =",newStatus)
 			statuses[0] = newStatus
 			UDPsendStatus <- newStatus
 
@@ -71,11 +78,10 @@ func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan
 	for{
 		select{
 		case localStatus = <- to_local_ch:
-			fmt.Printf("local_handler: ") 
-			printStatus(localStatus)
+			 
 			if len(localStatus.Orders) > 0 {
 				nextFloor <- localStatus.Orders[0].Floor
-				fmt.Println("local_handler: newStatus sending nextFloor = ",localStatus.Orders[0].Floor)
+				//fmt.Println("local_handler: newStatus sending nextFloor = ",localStatus.Orders[0].Floor)
 
 			}
 			
@@ -115,7 +121,7 @@ func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan
 				}
 			}
 
-			
+
 			from_local_ch <- localStatus
 		case <- StopCh :
 			fmt.Println("STOOOP received")

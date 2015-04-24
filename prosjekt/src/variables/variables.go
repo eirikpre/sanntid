@@ -1,11 +1,9 @@
 package variables
 
 
-
-
 type Order struct{
-	Floor int
-	Dir int
+	Floor int		`json:"Floor"`
+	Dir int			`json:"Dir"`
 }
 
 type Status struct{
@@ -13,11 +11,11 @@ type Status struct{
 	Floor int 			//Current floor
 	Direction int		//Up = 1, Still = 0, Down = -1
 	Stop bool
-	Orders []Order		//Destination floor
+	Orders []Order		`json:"Orders"`//Destination floor
 	
 }
 
-const port = 30000
+
 const N_FLOORS  	= 	3 
 const N_BUTTONS		= 	4      
 

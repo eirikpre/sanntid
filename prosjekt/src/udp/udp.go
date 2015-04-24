@@ -4,46 +4,50 @@ import (
 	"net"
 	"encoding/json"
 	"../variables"
+	"fmt"
+	//"time"
+	
 )
 
 const port = 30000
 
 func Udp_Init(UDPsendStatus, UDPreceiveStatus chan variables.Status){
-	
-	go udp_send(UDPsendStatus)
-	go udp_listen(UDPreceiveStatus)
-
-}
-
-func udp_listen(UDPreceiveStatus chan variables.Status){
-	addr, _ := net.ResolveUDPAddr("udp", ":port")
-	conn, _ := net.ListenUDP("udp",addr)
+	fmt.Println("Udp_Init: Initialzing")
+	var msg_rcv []byte = make([]byte,200)
 	
 	var status variables.Status
-	var message []byte
-	
-	for{
-		conn.ReadFromUDP(message)
-		json.Unmarshal(message, &status)
-		UDPreceiveStatus <- status
-	}
-}
 
-func udp_send(UDPsendStatus chan variables.Status){
-	
-	broadcast, _ := net.ResolveUDPAddr("udp",":port")
-	conn, _ := net.DialUDP("udp",nil, broadcast)
-	
-	for{
-		select{
-		case status := <- UDPsendStatus :
-			b,_ := json.Marshal(status)
-			conn.Write(b)
+	addr, _ := net.ResolveUDPAddr("udp4", "255.255.255.255:30000")
+	conn, _ := net.ListenUDP("udp4",addr)
+
+
+	go func() {
+		for{	
+				length,_,_ := conn.ReadFromUDP(msg_rcv)
+				msg_rcv = msg_rcv[:length]
+				json.Unmarshal(msg_rcv, &status)
+				fmt.Println("udp_received: ", msg_rcv)
+				UDPreceiveStatus <- status
 		}
-	}
+	}()
+
+	newAddr := new(net.UDPAddr)
+	*newAddr = *addr
+	newAddr.IP = make(net.IP, len(addr.IP))
+	copy(newAddr.IP,addr.IP)	
+
+	go func() {
+		for{
+				status = <- UDPsendStatus
+				message,_ := json.Marshal(status)
+				fmt.Println("udp_send: ", message)
+				conn.WriteToUDP(message,addr)
+			}
+	}()
 }
 
-func GetOwnIP() string{
+
+func GetOwnIP() string {
      interfaces, _ := net.InterfaceAddrs()
      for _, address := range interfaces {
 
@@ -53,12 +57,12 @@ func GetOwnIP() string{
 
           	if ipnet.IP.To4() != nil {
 
-             	return (ipnet.IP.String())
+             	return ipnet.IP.String()
 
           	}
       	}
      }
-     return "fail"
+     panic("GetOwnIP")
 }
 
 

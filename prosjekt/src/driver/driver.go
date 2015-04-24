@@ -48,7 +48,6 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 				motorHandler(0)
 				// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
 				lightButtons(9,true)
-
 				time.Sleep(time.Second*2)
 				lightButtons(9,false)
 				jobDone <- true
@@ -100,7 +99,10 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 					ObsCh <- true			
 				}else if i == 1{
 					lightButtons(i,true)
-					StopCh <- true				
+					fmt.Println("EMERGENCY STOP!!")
+					motorHandler(0)
+					StopCh <- true
+					return				
 				}else{
 					switch i {
 						case 0 , 2:

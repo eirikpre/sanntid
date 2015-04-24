@@ -1,12 +1,66 @@
 package main 
  
 import (
-	"fmt"
+	//"fmt"
 	"./src/variables"
 	"math"
 )
 
 
+
+func costFunc(statuses []variables.Status, newOrder variables.Order) (variables.Status, int){
+
+	costArray := make([]int,len(statuses))
+
+	// Checking for identical orders
+	for i:=0; i<len(statuses); i++ {     				
+		for j:=0; j<len(statuses[i].Orders);j++{
+			if statuses[i].Orders[j] == newOrder{
+				//fmt.Println("costFunc: identical order: ",newOrder)
+				return statuses[0],-1
+			}
+		}
+	}
+
+
+	// Buttons inside the elevator => job has to be done by self
+	if newOrder.Dir == 0{ 	
+		statuses[0].Orders = append(statuses[0].Orders[:],newOrder)
+		statuses[0] = sort(statuses[0]) 
+		return statuses[0],0
+	}
+
+
+	
+	for i:=0;i<len(statuses);i++{						// Creating a costArray
+		if (statuses[i].Floor == newOrder.Floor) && (statuses[i].Direction*newOrder.Dir >= 0){ 												// Elevator at the current floor && same direction
+			
+			statuses[i].Orders = append(statuses[i].Orders[:],newOrder)
+			statuses[i] = sort(statuses[i]) 
+			return statuses[i],i
+
+		}else{
+			for j:=0;j<len(statuses[i].Orders);j++{		// Add costs in the array
+				costArray[i] += int(math.Abs(float64(statuses[i].Floor - statuses[i].Orders[j].Floor)))
+				costArray[i] += int(math.Abs(float64(statuses[i].Floor - newOrder.Floor)))
+			}		
+			if statuses[i].Direction != newOrder.Dir && statuses[i].Direction != 0{
+				costArray[i] += 10
+			}			
+		}
+	}
+	minimum:=256;
+	position:=0;
+	for i:=0;i<len(statuses);i++{ 			// Find the cheapest elevator
+		if minimum > costArray[i]{
+			minimum = costArray[i]
+			position = i
+		}
+	}
+	statuses[position].Orders = append(statuses[position].Orders[:],newOrder)
+	statuses[position] = sort(statuses[position])
+	return statuses[position],position
+}
 
 func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 	if len(status.Orders) < 2{
@@ -37,7 +91,7 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 			}		
 	}
 
-	fmt.Println("sort: bubbleSorting -----")
+	//fmt.Println("sort: bubbleSorting -----")
 	printStatus(status)
 
 	
@@ -93,65 +147,11 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 		}
 	}
 
-	fmt.Println("sort: Exiting")
+	//fmt.Println("sort: Exiting")
 	//printStatus(status)
 	return status
 }
 
-
-func costFunc(statuses []variables.Status, newOrder variables.Order) (variables.Status, int){
-
-	costArray := make([]int,len(statuses))
-
-	// Checking for identical orders
-	for i:=0; i<len(statuses); i++ {     				
-		for j:=0; j<len(statuses[i].Orders);j++{
-			if statuses[i].Orders[j] == newOrder{
-				fmt.Println("costFunc: identical order: ",newOrder)
-				return statuses[0],-1
-			}
-		}
-	}
-
-
-	// Buttons inside the elevator => job has to be done by self
-	if newOrder.Dir == 0{ 	
-		statuses[0].Orders = append(statuses[0].Orders[:],newOrder)
-		statuses[0] = sort(statuses[0]) 
-		return statuses[0],0
-	}
-
-
-	
-	for i:=0;i<len(statuses);i++{						// Creating a costArray
-		if (statuses[i].Floor == newOrder.Floor) && (statuses[i].Direction*newOrder.Dir >= 0){ 												// Elevator at the current floor && same direction
-			
-			statuses[i].Orders = append(statuses[i].Orders[:],newOrder)
-			statuses[i] = sort(statuses[i]) 
-			return statuses[i],i
-
-		}else{
-			for j:=0;j<len(statuses[i].Orders);j++{		// Add costs in the array
-				costArray[i] += int(math.Abs(float64(statuses[i].Floor - statuses[i].Orders[j].Floor)))
-				costArray[i] += int(math.Abs(float64(statuses[i].Floor - newOrder.Floor)))
-			}		
-			if statuses[i].Direction != newOrder.Dir && statuses[i].Direction != 0{
-				costArray[i] += 10
-			}			
-		}
-	}
-	minimum:=256;
-	position:=0;
-	for i:=0;i<len(statuses);i++{ 			// Find the cheapest elevator
-		if minimum > costArray[i]{
-			minimum = costArray[i]
-			position = i
-		}
-	}
-	statuses[position].Orders = append(statuses[position].Orders[:],newOrder)
-	statuses[position] = sort(statuses[position])
-	return statuses[position],position
-}
 
 func bubbleSort(orders []variables.Order,direction int) []variables.Order { 	
 	var temp variables.Order
@@ -164,7 +164,7 @@ func bubbleSort(orders []variables.Order,direction int) []variables.Order {
 			}
 		}
 	}
-	fmt.Printf("bubbleSort: Orders: %v\n",orders)
+	//fmt.Printf("bubbleSort: Orders: %v\n",orders)
 	return orders
 }
 

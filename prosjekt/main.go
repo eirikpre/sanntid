@@ -37,15 +37,17 @@ func main(){
 	UDPreceiveStatus := make(chan variables.Status, 50)
 	UDPsendStatus := make(chan variables.Status, 50)
 	
+
 	driver.Init(nextFloor,jobDone,newOrders,StopCh,ObsCh,currentFloor)
+	udp.Udp_Init(UDPsendStatus, UDPreceiveStatus)
 	
 	go statusHandler(to_local_ch,from_local_ch,UDPreceiveStatus,UDPsendStatus, newOrders,)
 	go local_handler(to_local_ch,from_local_ch,jobDone,currentFloor,StopCh,ObsCh,nextFloor)
-	//errInit := udp.Udp_init(variables.lport, variables.bport, msg_size int, send_ch, receive_ch chan Udp_message)
-	//driver.Init()
+	
+
 	for{
 		time.Sleep(time.Second*10)
 	}
-	go udp.Udp_Init(UDPsendStatus, UDPreceiveStatus)
+	
 }
 
