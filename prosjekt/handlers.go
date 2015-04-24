@@ -4,8 +4,46 @@ import (
 	"fmt"
 	"./src/variables"
 	"./src/udp"
+	"./src/driver"
 )
 
+func refreshLights(statuses []variables.Status) {
+			//Turn every light off.
+	driver.LightButtons(0, false)
+	driver.LightButtons(3, false)
+	driver.LightButtons(4, false)
+	driver.LightButtons(6, false)
+	driver.LightButtons(7, false)
+	driver.LightButtons(10, false)
+
+
+	for i:=0 ; i<len(statuses); i++ {
+		for j:=0 ; j<len(statuses[i].Orders) ; j++{
+			switch(statuses[i].Orders[j]){
+
+			case variables.Order{0,1}:
+				driver.LightButtons(0,true)
+				
+			case variables.Order{1,1}:
+				driver.LightButtons(3, true)
+				
+			case variables.Order{1,-1}:
+				driver.LightButtons(4, true)
+				
+			case variables.Order{2,1}:
+				driver.LightButtons(6, true)
+				
+			case variables.Order{2,-1}:
+				driver.LightButtons(7, true)
+				
+			case variables.Order{3,-1}:
+				driver.LightButtons(10, true)
+				
+
+			}
+		}
+	}
+}
 
 
 
@@ -16,32 +54,35 @@ func statusHandler(to_local_ch, from_local_ch, UDPreceiveStatus, UDPsendStatus c
 	for{
 		select{
 		case newStatus := <- UDPreceiveStatus :
-
+			
 			//fmt.Println("statusHandler: UDPreceiveStatus =\n",newStatus)
 			for i:=0; i<len(statuses); i++{
 
 				if statuses[i].Addr == newStatus.Addr{
 					statuses[i] = newStatus
 					updated = true
-					if i == 0{
-						to_local_ch <- newStatus
-					}
-					fmt.Println("----------------STATUSES---------------------")
+
+					fmt.Println("\n----------------STATUSES---------------------")
 					for i:=0;i<len(statuses);i++{
 						fmt.Println(statuses[i])
+					}
+					if i == 0{
+						to_local_ch <- newStatus
 					}
 					break
 				}
 			}
 			if !(updated){
 				statuses = append(statuses[:], newStatus)
+				UDPsendStatus <- statuses[0]
 			}
-
+			refreshLights(statuses)
 			updated = false
 
 
 		case newStatus := <- from_local_ch:
 			//fmt.Println("statusHandler: from_local_ch =",newStatus)
+			
 			statuses[0] = newStatus
 			UDPsendStatus <- newStatus
 
@@ -101,15 +142,16 @@ func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan
 					localStatus.Direction = 1
 				}
 
+				from_local_ch <- localStatus
 			
 			}else if len(localStatus.Orders) == 1 && localStatus.Orders[0].Floor == localStatus.Floor{
 				
 				localStatus.Orders = append(localStatus.Orders[1:])
 				localStatus.Direction = 0
-
+				from_local_ch <- localStatus
 			}
 
-			from_local_ch <- localStatus
+			
 
 		case localStatus.Floor = <- currentFloor :
 			
@@ -121,8 +163,8 @@ func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan
 				}
 			}
 
-
 			from_local_ch <- localStatus
+
 		case <- StopCh :
 			fmt.Println("STOOOP received")
 			//send jobs to others?

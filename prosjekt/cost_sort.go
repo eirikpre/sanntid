@@ -1,7 +1,7 @@
 package main 
  
 import (
-	//"fmt"
+	"fmt"
 	"./src/variables"
 	"math"
 )
@@ -16,7 +16,7 @@ func costFunc(statuses []variables.Status, newOrder variables.Order) (variables.
 	for i:=0; i<len(statuses); i++ {     				
 		for j:=0; j<len(statuses[i].Orders);j++{
 			if statuses[i].Orders[j] == newOrder{
-				//fmt.Println("costFunc: identical order: ",newOrder)
+				fmt.Println("costFunc: identical order: ",newOrder)
 				return statuses[0],-1
 			}
 		}
@@ -92,7 +92,7 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 	}
 
 	//fmt.Println("sort: bubbleSorting -----")
-	printStatus(status)
+	
 
 	
 	status.Orders = bubbleSort(currentDir, status.Direction)
@@ -132,12 +132,10 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 	}
 
 
-	//printStatus(status)
+
 
 	for i:=0; i<len(status.Orders); i++{
-
-
-		if status.Orders[0].Floor*status.Direction <= status.Floor*status.Direction {
+		if status.Orders[0].Floor*status.Direction <= status.Floor*status.Direction{
 
 			wrongDir = status.Orders[1:]
 			status.Orders = append(wrongDir[:], status.Orders[0])
@@ -147,8 +145,7 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 		}
 	}
 
-	//fmt.Println("sort: Exiting")
-	//printStatus(status)
+
 	return status
 }
 

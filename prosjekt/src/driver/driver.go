@@ -25,7 +25,7 @@ func Init(nextFloor chan int, jobDone chan bool, newOrders chan variables.Order,
 	io_init()
 	sensor := make(chan int,0)
 	for i:=0; i<12; i++{		//Turn every light off.
-		lightButtons(i, false)
+		LightButtons(i, false)
 	} 
 	go readSensor(sensor)
 	go readButtons(newOrders,ObsCh,StopCh)
@@ -47,9 +47,9 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 				time.Sleep(time.Millisecond*150)
 				motorHandler(0)
 				// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
-				lightButtons(9,true)
+				LightButtons(9,true)
 				time.Sleep(time.Second*2)
-				lightButtons(9,false)
+				LightButtons(9,false)
 				jobDone <- true
 				
 
@@ -66,10 +66,10 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 				}else if target == tempFloor{ 	
 					motorHandler(0)
 					// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
-					lightButtons(9,true)
+					LightButtons(9,true)
 
 					time.Sleep(time.Second*2)
-					lightButtons(9,false)
+					LightButtons(9,false)
 					jobDone <- true
 				}
 
@@ -78,7 +78,7 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 	}
 }
 
-func lightButtons(light int, on bool){
+func LightButtons(light int, on bool){
 	if on {	
 		io_set_bit(lamp_channel_matrix[light])
 	}else{ 
@@ -98,7 +98,7 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 				if i == 9 {
 					ObsCh <- true			
 				}else if i == 1{
-					lightButtons(i,true)
+					LightButtons(i,true)
 					fmt.Println("EMERGENCY STOP!!")
 					motorHandler(0)
 					StopCh <- true
@@ -136,7 +136,7 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 								newOrders <- order
 					}
 
-					lightButtons(i,true)
+					LightButtons(i,true)
 					lastRead = i
 					//fmt.Println("readButtons: Sending order" , order)
 					
@@ -159,31 +159,24 @@ func readSensor(sensor chan int){
 			current = 0
 			io_clear_bit(variables.LIGHT_FLOOR_IND1)//00
 			io_clear_bit(variables.LIGHT_FLOOR_IND2)
-			io_clear_bit(variables.LIGHT_UP1)
 			io_clear_bit(variables.LIGHT_COMMAND1)
 
 		}else if io_read_bit(variables.SENSOR_FLOOR2) == 1 {
 			current = 1
 			io_clear_bit(variables.LIGHT_FLOOR_IND1)//01
 			io_set_bit(variables.LIGHT_FLOOR_IND2)
-			io_clear_bit(variables.LIGHT_DOWN2)
-			io_clear_bit(variables.LIGHT_UP2)
 			io_clear_bit(variables.LIGHT_COMMAND2)
 
 		}else if io_read_bit(variables.SENSOR_FLOOR3) == 1 {
 			current = 2
 			io_set_bit(variables.LIGHT_FLOOR_IND1)//10
 			io_clear_bit(variables.LIGHT_FLOOR_IND2)
-			io_clear_bit(variables.LIGHT_DOWN3)
-			io_clear_bit(variables.LIGHT_UP3)
 			io_clear_bit(variables.LIGHT_COMMAND3)
 
 		}else if io_read_bit(variables.SENSOR_FLOOR4) == 1 {
 			current = 3
 			io_set_bit(variables.LIGHT_FLOOR_IND1)//11
 			io_set_bit(variables.LIGHT_FLOOR_IND2)
-			io_clear_bit(variables.LIGHT_DOWN4)
-			io_clear_bit(variables.LIGHT_UP4)
 			io_clear_bit(variables.LIGHT_COMMAND4)
 		}
 		

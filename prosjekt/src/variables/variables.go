@@ -7,10 +7,10 @@ type Order struct{
 }
 
 type Status struct{
-	Addr string			//Local IP
-	Floor int 			//Current floor
-	Direction int		//Up = 1, Still = 0, Down = -1
-	Stop bool
+	Addr string			`json:"Addr"`//Local IP
+	Floor int 			`json:"FloorTop"`//Current floor
+	Direction int		`json:"Direction"`//Up = 1, Still = 0, Down = -1
+	Stop bool			`json:"Stop"`
 	Orders []Order		`json:"Orders"`//Destination floor
 	
 }
