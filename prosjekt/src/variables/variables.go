@@ -1,17 +1,17 @@
 package variables
 
-
 type Order struct{
-	Floor int		`json:"Floor"`
-	Dir int			`json:"Dir"`
+	Floor int		
+	Dir int			
+
 }
 
 type Status struct{
-	Addr string			`json:"Addr"`//Local IP
-	Floor int 			`json:"FloorTop"`//Current floor
-	Direction int		`json:"Direction"`//Up = 1, Still = 0, Down = -1
-	Stop bool			`json:"Stop"`
-	Orders []Order		`json:"Orders"`//Destination floor
+	Addr string			//Local IP
+	Floor int 			//Current floor
+	Direction int		//Up = 1, Still = 0, Down = -1
+	Stop bool			
+	Orders []Order		//Destination floors
 	
 }
 

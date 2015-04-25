@@ -87,7 +87,7 @@ func LightButtons(light int, on bool){
 }
 
 func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan bool){ 
-	lastRead := -1
+	
 	var order variables.Order
 	fmt.Println("readButtons: Initializing")
 	for{
@@ -108,6 +108,8 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 						case 0 , 2:
 							order.Floor = 0
 							order.Dir = 1 - i/2
+							newOrders <- order
+							LightButtons(i,true)
 						case 3 , 4 , 5 :
 							order.Floor = 1
 							if i == 3{
@@ -117,6 +119,8 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 							}else {
 								order.Dir = 0
 							}
+							newOrders <- order
+							LightButtons(i,true)
 						case 6 , 7 , 8 :
 							order.Floor = 2 
 							if i == 6{
@@ -126,18 +130,21 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 							}else {
 								order.Dir = 0
 							}
+							newOrders <- order
+							LightButtons(i,true)
 						case 10 , 11:
 							order.Floor = 3
 							order.Dir =  i - 11
+							newOrders <- order
+							LightButtons(i,true)
 					}
-					if i != lastRead{
-						newOrders <- order
-					}else if io_read_bit(0x200+4+order.Floor) == 1 && i == lastRead {
-								newOrders <- order
-					}
+						
 
-					LightButtons(i,true)
-					lastRead = i
+						
+
+
+					
+					
 					//fmt.Println("readButtons: Sending order" , order)
 					
 				}

@@ -34,8 +34,8 @@ func main(){
 	currentFloor := make(chan int)
 	to_local_ch := make(chan variables.Status)
 	from_local_ch := make(chan variables.Status)
-	UDPreceiveStatus := make(chan variables.Status)
-	UDPsendStatus := make(chan variables.Status)
+	UDPreceiveStatus := make(chan variables.Status,5)
+	UDPsendStatus := make(chan variables.Status,5)
 	
 
 	driver.Init(nextFloor,jobDone,newOrders,StopCh,ObsCh,currentFloor)

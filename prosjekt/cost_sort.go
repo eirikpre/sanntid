@@ -8,17 +8,20 @@ import (
 
 
 
-func costFunc(statuses []variables.Status, newOrder variables.Order) (variables.Status, int){
+func costFunc(statuses []variables.Status, newOrder variables.Order) ([]variables.Status, int){
 
 	costArray := make([]int,len(statuses))
 
 	// Checking for identical orders
 	for i:=0; i<len(statuses); i++ {     				
 		for j:=0; j<len(statuses[i].Orders);j++{
-			if statuses[i].Orders[j] == newOrder{
+			if statuses[i].Orders[j] == newOrder {
 				fmt.Println("costFunc: identical order: ",newOrder)
-				return statuses[0],-1
+				return statuses,-1
 			}
+		}
+		if newOrder.Dir == 0 && i > 0{
+			break
 		}
 	}
 
@@ -27,39 +30,38 @@ func costFunc(statuses []variables.Status, newOrder variables.Order) (variables.
 	if newOrder.Dir == 0{ 	
 		statuses[0].Orders = append(statuses[0].Orders[:],newOrder)
 		statuses[0] = sort(statuses[0]) 
-		return statuses[0],0
+		return statuses,0
 	}
 
 
-	
-	for i:=0;i<len(statuses);i++{						// Creating a costArray
-		if (statuses[i].Floor == newOrder.Floor) && (statuses[i].Direction*newOrder.Dir >= 0){ 												// Elevator at the current floor && same direction
-			
-			statuses[i].Orders = append(statuses[i].Orders[:],newOrder)
-			statuses[i] = sort(statuses[i]) 
-			return statuses[i],i
-
-		}else{
-			for j:=0;j<len(statuses[i].Orders);j++{		// Add costs in the array
-				costArray[i] += int(math.Abs(float64(statuses[i].Floor - statuses[i].Orders[j].Floor)))
-				costArray[i] += int(math.Abs(float64(statuses[i].Floor - newOrder.Floor)))
-			}		
-			if statuses[i].Direction != newOrder.Dir && statuses[i].Direction != 0{
-				costArray[i] += 10
-			}			
-		}
+	// Generating a costArray
+	for i:=0;i<len(statuses);i++{						
+		for j:=0;j<len(statuses[i].Orders);j++{	
+			costArray[i] += int(math.Abs(float64(statuses[i].Floor - statuses[i].Orders[j].Floor)))
+			costArray[i] += int(math.Abs(float64(statuses[i].Floor - newOrder.Floor)))
+		}		
+		if statuses[i].Direction != newOrder.Dir && statuses[i].Direction != 0{
+			costArray[i] += 10
+		}			
 	}
+
 	minimum:=256;
-	position:=0;
-	for i:=0;i<len(statuses);i++{ 			// Find the cheapest elevator
+	position:=-1;
+
+	// Find the cheapest elevator
+	for i:=0;i<len(statuses);i++{ 			
 		if minimum > costArray[i]{
 			minimum = costArray[i]
 			position = i
 		}
 	}
+
+	// Add to the cheapest & sort
+	fmt.Printf("costFunc: updating%v",statuses[position])
 	statuses[position].Orders = append(statuses[position].Orders[:],newOrder)
 	statuses[position] = sort(statuses[position])
-	return statuses[position],position
+	fmt.Println("into ",statuses[position])
+	return statuses,position
 }
 
 func sort(status variables.Status) variables.Status { 	// Sorts the Orders
@@ -86,28 +88,24 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 			// Adding the wrongDir orders
 				wrongDir = append(wrongDir[:], status.Orders[i])
 			}else{	
-			// Adding  the zero orders
+			// Adding the zero orders
 				zeros = append(zeros[:], status.Orders[i])
 			}		
 	}
-
-	//fmt.Println("sort: bubbleSorting -----")
 	
 
-	
+	// Sorting individual lists
 	status.Orders = bubbleSort(currentDir, status.Direction)
 	wrongDir = bubbleSort(wrongDir, status.Direction*-1)
 	zeros = bubbleSort(zeros, status.Direction)
-	
 
-	for i := range wrongDir{
+	for i:=0;i<len(wrongDir);i++{
 		status.Orders = append( status.Orders[:], wrongDir[i])
 	}
 
 
 	
 	// Adding the zeros in correct place
-
 	if len(status.Orders) != 0{
 		for i:=0; i<len(zeros);i++{	
 			for j:=0;j<len(status.Orders);j++{
@@ -127,13 +125,11 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 		}
 	}else{
 		status.Orders = zeros
-		
-
 	}
 
 
 
-
+	// Find the 'cheapest' elevator
 	for i:=0; i<len(status.Orders); i++{
 		if status.Orders[0].Floor*status.Direction <= status.Floor*status.Direction{
 
