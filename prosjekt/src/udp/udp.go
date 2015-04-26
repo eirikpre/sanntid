@@ -18,7 +18,7 @@ func Udp_Init(UDPsendStatus, UDPreceiveStatus chan variables.Status){
 	
 	
 
-	addr, err := net.ResolveUDPAddr("udp4", "255.255.255.255:30010")
+	addr, err := net.ResolveUDPAddr("udp4", "255.255.255.255:30020")
 	if(err != nil){
 		fmt.Println("Error in resovle: ", err)
 	}

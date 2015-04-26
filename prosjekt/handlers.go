@@ -104,10 +104,12 @@ func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan
 					//fmt.Println("I'm here if orderlist is larger than 1")
 					localStatus.Orders = append(localStatus.Orders[1:])
 					//fmt.Println("localStatus.Orders : ", localStatus.Orders[:])
+					localStatus.Direction = getDir(localStatus)
+
 					localStatus = sort(localStatus)
 					nextFloor <- localStatus.Orders[0].Floor
 
-					localStatus.Direction = getDir(localStatus)
+					
 
 				}else if len(localStatus.Orders) == 1 && localStatus.Orders[0].Floor == localStatus.Floor{
 					//fmt.Println("I'm here if orderlist equals 1, and order.floor = Floor")

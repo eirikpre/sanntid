@@ -60,7 +60,7 @@ func costFunc(statuses []variables.Status, newOrder variables.Order) ([]variable
 	//fmt.Printf("costFunc: updating%v\n",statuses[position])
 
 	statuses[position].Orders = append(statuses[position].Orders[:],newOrder)
-	//fmt.Println("this is going on statuses: ", statuses[position])
+	fmt.Println("this is going on statuses: ", statuses[position])
 	statuses[position] = sort(statuses[position])
 	//fmt.Println("into ",statuses[position],"position is: ", position)
 	return statuses,position
@@ -106,39 +106,54 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 	for i:=0;i<len(wrongDir);i++{
 		status.Orders = append( status.Orders[:], wrongDir[i])
 	}
-
-
+	//FIX stopping between floors if you push the same floor o
 	
 	// Adding the zeros in correct place
 	if len(status.Orders) != 0{
 		for i:=0; i<len(zeros);i++{	
 			for j:=0;j<len(status.Orders);j++{
-				//fmt.Println("I went in here in: i= %d, j = %d", i, j)
+				/*if(status.Orders[0].Floor == status.Floor && status.Orders[0].Dir == status.Direction) {
+					status.Orders = append(status.Orders[:], status.Orders)
+				}else if(status.Floor == zeros[0].Floor){
+					status.Orders = append(status.Orders[:], zeros[i])*/
+				
+				//fmt.Println("i: ", i, "j: ", j)
 				//fmt.Println("status.Orders.Floor: ", status.Orders[j].Floor)
 				//fmt.Println("zeros.Floor: ", zeros[i].Floor)
 				//fmt.Println("len of status.Orders: ", len(status.Orders))
 				//fmt.Println("len of zeros: ", len(zeros))
-				if status.Orders[j].Floor*status.Direction > zeros[i].Floor*status.Direction{
-
+				if status.Orders[j].Floor*status.Direction >= zeros[i].Floor*status.Direction{
+					
 					wrongDir = status.Orders[j:]
 					status.Orders = append(status.Orders[:], variables.Order{0,0} )
-					copy( status.Orders[j+1:], wrongDir[:] )
+					fmt.Println("status.Orders i For lokka: ", status.Orders)
+					copy( status.Orders[j+1:], wrongDir[:])
 					status.Orders[j] = zeros[i]
+					//status.Orders = status.Orders
+					fmt.Println(status.Orders[:j])
 					break
 
-				}else if i == len(status.Orders)-1{
+				}else if j == len(status.Orders)-1{
+
 					status.Orders = append(status.Orders[:],zeros[i])
-					status.Orders = status.Orders[:len(status.Orders)]
+					fmt.Println("Status.Orders before length: ", status.Orders)
+
+					//status.Orders = status.Orders[:]
+
 					//fmt.Println("This is right after insert: ", status.Orders[:])
+					break
+
 				}
 			}		
-		}
+		}	
 	}else{
+		
 		//fmt.Println("I WENT IN HEREE??????")
 		status.Orders = zeros
+		//fmt.Println("after :", status.Orders[:])
 	}
 
-	//fmt.Println("This is status.Orders after zero place: ", status.Orders[:])
+	fmt.Println("This is status.Orders after zero place: ", status.Orders[:])
 
 	// Find the 'cheapest' elevator
 	for i:=0; i<len(status.Orders); i++{
@@ -152,7 +167,7 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 		}
 	}
 	//fmt.Println("This is what i return: ", status)
-
+	fmt.Print("status before returning: ", status)
 	return status
 }
 
