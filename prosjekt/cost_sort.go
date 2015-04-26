@@ -1,45 +1,52 @@
 package main 
  
 import (
-	"fmt"
 	"./src/variables"
 	"math"
 )
 
 
-func costFunc(statuses []variables.Status, newOrder variables.Order) ([]variables.Status, int){
+func costFunc(statuses []variables.Status, newOrder variables.Order) (variables.Status, int){
 
 	costArray := make([]int,len(statuses))
 
 	// Checking for identical orders
-	for i:=0; i<len(statuses); i++ {     				
-		for j:=0; j<len(statuses[i].Orders);j++{
-			if statuses[i].Orders[j] == newOrder {
-				fmt.Println("costFunc: identical order: ",newOrder)
-				return statuses,-1
+	for i:=0; i<len(statuses); i++ { 
+
+		if (newOrder.Dir == 0 && i > 0) || statuses[i].Stop{
+			break
+			
+		}else{ 				
+			for j:=0; j<len(statuses[i].Orders);j++{
+
+				if statuses[i].Orders[j] == newOrder {
+
+					return statuses[0],-1
+				}
 			}
 		}
-		if newOrder.Dir == 0 && i > 0{
-			break
-		}
+
 	}
-	//fmt.Println("Pos 1: ", statuses[0].Orders)
+
 
 	// Buttons inside the elevator => job has to be done by self
 	if newOrder.Dir == 0{ 	
 		statuses[0].Orders = append(statuses[0].Orders[:],newOrder)
 		statuses[0] = sort(statuses[0]) 
-		return statuses,0
+		return statuses[0],0
 	}
-	//fmt.Println("Pos 2: ", statuses[0].Orders)
+
 
 	// Generating a costArray
 	for i:=0;i<len(statuses);i++{						
 		for j:=0;j<len(statuses[i].Orders);j++{	
 			costArray[i] += int(math.Abs(float64(statuses[i].Floor - statuses[i].Orders[j].Floor)))
 			costArray[i] += int(math.Abs(float64(statuses[i].Floor - newOrder.Floor)))
-		}		
-		if statuses[i].Direction != newOrder.Dir && statuses[i].Direction != 0{
+		}
+		if statuses[i].Stop{
+			costArray[i] += 1000
+
+		}else if statuses[i].Direction != newOrder.Dir && statuses[i].Direction != 0{
 			costArray[i] += 10
 		}			
 	}
@@ -56,19 +63,14 @@ func costFunc(statuses []variables.Status, newOrder variables.Order) ([]variable
 
 	}
 
-	// Add to the cheapest & sort
-	//fmt.Printf("costFunc: updating%v\n",statuses[position])
-
 	statuses[position].Orders = append(statuses[position].Orders[:],newOrder)
-	fmt.Println("this is going on statuses: ", statuses[position])
 	statuses[position] = sort(statuses[position])
-	//fmt.Println("into ",statuses[position],"position is: ", position)
-	return statuses,position
+	return statuses[position],position
 }
 
-func sort(status variables.Status) variables.Status { 	// Sorts the Orders
+
+func sort(status variables.Status) variables.Status { 	
 	if len(status.Orders) < 2{
-		//fmt.Println("Status.Orders er mindre enn 2: ")
 		return status
 	}
 
@@ -96,64 +98,42 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 			}		
 	}
 	
-
 	// Sorting individual lists
 	status.Orders = bubbleSort(currentDir, status.Direction)
 	wrongDir = bubbleSort(wrongDir, status.Direction*-1)
 	zeros = bubbleSort(zeros, status.Direction)
-	//fmt.Println("The zeros: ", zeros[:])
-	//fmt.Println("status.Orders : ", status.Orders[:])
+
 	for i:=0;i<len(wrongDir);i++{
 		status.Orders = append( status.Orders[:], wrongDir[i])
 	}
-	//FIX stopping between floors if you push the same floor o
+
 	
 	// Adding the zeros in correct place
 	if len(status.Orders) != 0{
 		for i:=0; i<len(zeros);i++{	
 			for j:=0;j<len(status.Orders);j++{
-				/*if(status.Orders[0].Floor == status.Floor && status.Orders[0].Dir == status.Direction) {
-					status.Orders = append(status.Orders[:], status.Orders)
-				}else if(status.Floor == zeros[0].Floor){
-					status.Orders = append(status.Orders[:], zeros[i])*/
-				
-				//fmt.Println("i: ", i, "j: ", j)
-				//fmt.Println("status.Orders.Floor: ", status.Orders[j].Floor)
-				//fmt.Println("zeros.Floor: ", zeros[i].Floor)
-				//fmt.Println("len of status.Orders: ", len(status.Orders))
-				//fmt.Println("len of zeros: ", len(zeros))
+
 				if status.Orders[j].Floor*status.Direction >= zeros[i].Floor*status.Direction{
 					
 					wrongDir = status.Orders[j:]
 					status.Orders = append(status.Orders[:], variables.Order{0,0} )
-					fmt.Println("status.Orders i For lokka: ", status.Orders)
 					copy( status.Orders[j+1:], wrongDir[:])
 					status.Orders[j] = zeros[i]
-					//status.Orders = status.Orders
-					fmt.Println(status.Orders[:j])
 					break
 
 				}else if j == len(status.Orders)-1{
 
 					status.Orders = append(status.Orders[:],zeros[i])
-					fmt.Println("Status.Orders before length: ", status.Orders)
-
-					//status.Orders = status.Orders[:]
-
-					//fmt.Println("This is right after insert: ", status.Orders[:])
 					break
 
 				}
 			}		
 		}	
 	}else{
-		
-		//fmt.Println("I WENT IN HEREE??????")
-		status.Orders = zeros
-		//fmt.Println("after :", status.Orders[:])
-	}
 
-	fmt.Println("This is status.Orders after zero place: ", status.Orders[:])
+		status.Orders = zeros
+
+	}
 
 	// Find the 'cheapest' elevator
 	for i:=0; i<len(status.Orders); i++{
@@ -166,8 +146,6 @@ func sort(status variables.Status) variables.Status { 	// Sorts the Orders
 			break
 		}
 	}
-	//fmt.Println("This is what i return: ", status)
-	fmt.Print("status before returning: ", status)
 	return status
 }
 
@@ -183,7 +161,6 @@ func bubbleSort(orders []variables.Order,direction int) []variables.Order {
 			}
 		}
 	}
-	//fmt.Printf("bubbleSort: Orders: %v\n",orders)
 	return orders
 }
 
