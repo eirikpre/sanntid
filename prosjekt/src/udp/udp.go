@@ -16,10 +16,17 @@ func Udp_Init(UDPsendStatus, UDPreceiveStatus chan variables.Status){
 	fmt.Println("Udp_Init: Initialzing")
 	
 	
-	var status_rcv variables.Status	
+	
 
-	addr, _ := net.ResolveUDPAddr("udp4", "255.255.255.255:30000")
-	conn, _ := net.ListenUDP("udp4",addr)
+	addr, err := net.ResolveUDPAddr("udp4", "255.255.255.255:30010")
+	if(err != nil){
+		fmt.Println("Error in resovle: ", err)
+	}
+	
+	conn, err := net.ListenUDP("udp4",addr)
+	if(err != nil){
+		fmt.Println("Error in ListenUDP: ", err)
+	}
 
 
 	go func() {
@@ -28,8 +35,12 @@ func Udp_Init(UDPsendStatus, UDPreceiveStatus chan variables.Status){
 				var msg_rcv []byte = make([]byte,2000)
 				length,_,_ := conn.ReadFromUDP(msg_rcv)
 				msg_rcv = msg_rcv[:length]
-				json.Unmarshal(msg_rcv,&status_rcv)
-				fmt.Println("udp_received: ",status_rcv)
+				var status_rcv variables.Status	
+				err := json.Unmarshal(msg_rcv,&status_rcv)
+				if(err != nil){
+					fmt.Println("error i unmarshal: ", err)
+				}
+				//fmt.Println("udp_received: ",status_rcv)
 				UDPreceiveStatus <- status_rcv
 		}
 	}()
@@ -40,13 +51,21 @@ func Udp_Init(UDPsendStatus, UDPreceiveStatus chan variables.Status){
 	copy(newAddr.IP,addr.IP)	
 
 	go func() {
-		for{
+		for{	
 				status_snd := <- UDPsendStatus
-				fmt.Println("udp_send: ",status_snd)
+				//fmt.Println("udp_send: ",status_snd)
 				
-				bytes, _:= json.Marshal(&status_snd)
+				bytes,err := json.Marshal(&status_snd)
+				if(err != nil){
+					fmt.Println("error i Marshal: ", err)
+				}
 
-				conn.WriteToUDP(bytes,addr)
+				_,err = conn.WriteToUDP(bytes,addr)
+				if(err != nil){
+					fmt.Println("Error in write: ", err)
+				}
+				//time.Sleep(time.Millisecond*300)
+				
 			}
 	}()
 }

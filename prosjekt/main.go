@@ -34,15 +34,15 @@ func main(){
 	currentFloor := make(chan int)
 	to_local_ch := make(chan variables.Status)
 	from_local_ch := make(chan variables.Status)
-	UDPreceiveStatus := make(chan variables.Status,5)
-	UDPsendStatus := make(chan variables.Status,5)
+	UDPreceiveStatus := make(chan variables.Status)
+	UDPsendStatus := make(chan variables.Status)
 	
 
-	driver.Init(nextFloor,jobDone,newOrders,StopCh,ObsCh,currentFloor)
+	driver.Init(newOrders,jobDone,StopCh,ObsCh,nextFloor,currentFloor)
 	udp.Udp_Init(UDPsendStatus, UDPreceiveStatus)
 
-	go statusHandler(to_local_ch,from_local_ch,UDPreceiveStatus,UDPsendStatus, newOrders,)
-	go local_handler(to_local_ch,from_local_ch,jobDone,currentFloor,StopCh,ObsCh,nextFloor)
+	go statusHandler(to_local_ch,from_local_ch,UDPreceiveStatus,UDPsendStatus, newOrders, jobDone)
+	go local_handler(to_local_ch,from_local_ch,jobDone,currentFloor,StopCh,nextFloor)
 	
 
 	for{

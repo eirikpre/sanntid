@@ -21,19 +21,26 @@ var lamp_channel_matrix  = []int{
     variables.LIGHT_DOOR_OPEN, variables.LIGHT_DOWN4, variables.LIGHT_COMMAND4,
 }
 
-func Init(nextFloor chan int, jobDone chan bool, newOrders chan variables.Order, StopCh chan bool, ObsCh chan bool,	currentFloor chan int){
+func Init(newOrders chan variables.Order, jobDone, StopCh, ObsCh chan bool, nextFloor, currentFloor chan int){
 	io_init()
 	sensor := make(chan int,0)
 	for i:=0; i<12; i++{		//Turn every light off.
 		LightButtons(i, false)
-	} 
+	}
+
+
+
 	go readSensor(sensor)
 	go readButtons(newOrders,ObsCh,StopCh)
-	go moveToFloor(nextFloor,currentFloor,sensor,jobDone)	
-	
+	go moveToFloor(nextFloor,currentFloor,sensor,jobDone,ObsCh)
+/*
+	var sleepStart chan int
+	var sleepDone chan bool
+	go sleeper(sleepStart,sleepDone)	
+*/	
 }
 
-func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, jobDone chan bool ){
+func moveToFloor(nextFloor chan int, currentFloor, sensor chan int, jobDone,ObsCh chan bool ){
 	tempFloor := 1;
 	target := 0;
 	fmt.Println("moveToFloor: Initializing")
@@ -41,9 +48,10 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 	for{
 		select{
 		case tempFloor = <-sensor:
+			//fmt.Println("senor is registering: ", tempFloor)
 			currentFloor <- tempFloor
 			//fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
-			if tempFloor == target{
+			if tempFloor == target {
 				time.Sleep(time.Millisecond*150)
 				motorHandler(0)
 				// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
@@ -51,19 +59,19 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 				time.Sleep(time.Second*2)
 				LightButtons(9,false)
 				jobDone <- true
-				
-
 			}
+
 			
 
 		case target = <- nextFloor:
 			//fmt.Println("MoveToFloor: target=",target, "tempFloor=",tempFloor)
-							
+				//fmt.Println("nextfloor = target: ", target)
 				if target < tempFloor{
 				 	motorHandler(-1)	 
 				}else if target > tempFloor { 
 					motorHandler(1) 
-				}else if target == tempFloor{ 	
+				}else if target == tempFloor{ 
+					//fmt.Println("tempFloor = target: ", target)
 					motorHandler(0)
 					// Åpner dører og venter 4 sek. DÅRLIG IMPLEMENTASJON
 					LightButtons(9,true)
@@ -74,6 +82,7 @@ func moveToFloor(nextFloor chan int, currentFloor chan int, sensor chan int, job
 				}
 
 		}
+
 		
 	}
 }
@@ -96,6 +105,7 @@ func readButtons( newOrders chan variables.Order, ObsCh chan bool, StopCh chan b
 			if io_read_bit(button_channel_matrix[i]) == 1{
 				
 				if i == 9 {
+
 					ObsCh <- true			
 				}else if i == 1{
 					LightButtons(i,true)
@@ -209,3 +219,10 @@ func motorHandler(motorDir int ) {
 		}
   	
 }
+
+/*
+func sleeper(sleepStart chan int,sleepDone chan bool){
+	var time.Timer
+
+}
+*/

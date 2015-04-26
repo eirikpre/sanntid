@@ -7,11 +7,15 @@ import (
 	"./src/driver"
 )
 
-func statusHandler(to_local_ch, from_local_ch, UDPreceiveStatus, UDPsendStatus chan variables.Status, newOrders chan variables.Order ){
+func statusHandler(to_local_ch, from_local_ch, UDPreceiveStatus, UDPsendStatus chan variables.Status, newOrders chan variables.Order , jobDone chan bool){
+	fmt.Println("statusHandler: Initializing")
 	statuses := make([]variables.Status,0)
+
 	statuses = append(statuses[:],createStatus())
 
+	var newOrder variables.Order
 	var tempStatus variables.Status
+	var position int
 
 	var updated bool = false
 	for{
@@ -21,18 +25,21 @@ func statusHandler(to_local_ch, from_local_ch, UDPreceiveStatus, UDPsendStatus c
 			for i:=0; i<len(statuses); i++{
 
 				if (statuses[i].Addr == tempStatus.Addr)	{
-					fmt.Println("udp: updating",statuses[i],"into ",tempStatus," pos:",i)
+					//fmt.Println("udp: updating",statuses[i],"into ",tempStatus," pos:",i)
 					statuses[i] = tempStatus
 					updated = true
 					if i == 0{
+						//fmt.Println("Sending to_local_ch: ", statuses[0])
 						to_local_ch <- statuses[0]
+						
 					}
 					
 				}
 			}
 
 			if !(updated){
-				fmt.Println("Adding a new entry to statuses!!")
+				//fmt.Println("Adding a new entry to statuses!!")
+				
 				statuses = append(statuses[:], tempStatus)
 				UDPsendStatus <- statuses[0]
 			}
@@ -45,37 +52,31 @@ func statusHandler(to_local_ch, from_local_ch, UDPreceiveStatus, UDPsendStatus c
 			}
 			
 			refreshLights(statuses)
-			
 
 
 		case tempStatus = <- from_local_ch:
-
-			fmt.Println("status_from_local: updating",statuses[0],"into ",tempStatus)
-			statuses[0] = tempStatus
-			UDPsendStatus <- tempStatus
-
-		case newOrder := <- newOrders :
+				//fmt.Println("status_from_local: updating",statuses[0],"into ",tempStatus)
+				statuses[0] = tempStatus
+				UDPsendStatus <- tempStatus
 			
-			statuses,position := costFunc(statuses,newOrder)
+
+		case newOrder = <- newOrders :
+			
+			statuses,position = costFunc(statuses,newOrder)
 			
 
 			if position >= 0 {
-				
+				//fmt.Println("Posistion after cost: ", position)
 				statuses[position].Direction = getDir(statuses[position])
+				//fmt.Println("Dir after getDir: ", statuses[position].Direction)
 				UDPsendStatus <- statuses[position]
-			}
 
-			fmt.Println("\n----------------STATUSES---------------------")
-			for i:=0;i<len(statuses);i++{
-				fmt.Println(statuses[i])
-			}
-			
-		
+			}		
 		}	
 	}
 }
 
-func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan bool,currentFloor chan int,StopCh chan bool,ObsCh chan bool,nextFloor chan int){
+func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan bool,currentFloor chan int,StopCh chan bool,nextFloor chan int){
 	var localStatus variables.Status = createStatus()
 	fmt.Println("local_handler: Initializing")
 	//from_local_ch <- localStatus
@@ -84,43 +85,52 @@ func local_handler(to_local_ch ,from_local_ch chan variables.Status,jobDone chan
 	for{
 		select{
 		case localStatus = <- to_local_ch:
-			 
+			 //fmt.Println("localStatus Order is: ", localStatus.Orders)
 			if len(localStatus.Orders) > 0 {
+				//fmt.Println("localStatus case: Not empty")
 				nextFloor <- localStatus.Orders[0].Floor
+
+			}else{
+				//fmt.Println("localStatus case: Orders are empty")
 			}
 			
 			
 		// Some job has been done, target == tempFloor
-		case <- jobDone :
+		case joDone := <- jobDone :
+			//fmt.Println("jobDone : ", joDone)
+			if(joDone == true){
+				//fmt.Println("In jobDone case: ", localStatus.Floor)
+				if len(localStatus.Orders) > 1 && localStatus.Orders[0].Floor == localStatus.Floor{
+					//fmt.Println("I'm here if orderlist is larger than 1")
+					localStatus.Orders = append(localStatus.Orders[1:])
+					//fmt.Println("localStatus.Orders : ", localStatus.Orders[:])
+					localStatus = sort(localStatus)
+					nextFloor <- localStatus.Orders[0].Floor
 
-			if len(localStatus.Orders) > 1 && localStatus.Orders[0].Floor == localStatus.Floor{
-	
-				localStatus.Orders = append(localStatus.Orders[1:])
-				nextFloor <- localStatus.Orders[0].Floor
-				localStatus.Direction = getDir(localStatus)
+					localStatus.Direction = getDir(localStatus)
 
-			}else if len(localStatus.Orders) == 1 && localStatus.Orders[0].Floor == localStatus.Floor{
-				
-				localStatus.Orders = nil
-				localStatus.Direction = 0
-				
+				}else if len(localStatus.Orders) == 1 && localStatus.Orders[0].Floor == localStatus.Floor{
+					//fmt.Println("I'm here if orderlist equals 1, and order.floor = Floor")
+					localStatus.Orders = nil
+					localStatus.Direction = 0
+					
+				}
+				//fmt.Println("I'm at the end of jobDone")
+				from_local_ch <- localStatus
 			}
 
-			from_local_ch <- localStatus
-			
-
 		case localStatus.Floor = <- currentFloor :
+			//fmt.Println("In localStatus case: ", localStatus.Floor)
 			
-			localStatus.Direction = getDir(localStatus) 
-
+			localStatus.Direction = getDir(localStatus)
 			from_local_ch <- localStatus
 
 		case <- StopCh :
 			fmt.Println("STOOOP received")
 			//send jobs to others?
 			//set stop bit in status
-		case <- ObsCh  :
-			fmt.Println("OOOOBS received")
+
+
 		}
 	}
 
