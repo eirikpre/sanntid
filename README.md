@@ -1,4 +1,3 @@
-# sanntid
+# TTK4145 - Sanntidsprogrammering
 
-
-blablalblablaab
+Dette repo inkluderer en komplett løsning på heisoppgaven, løst i språket Go.
